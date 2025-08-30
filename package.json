@@ -1,0 +1,43 @@
+{
+  "name": "azure-voice-live",
+  "version": "1.0.0",
+  "description": "A Node.js library for Microsoft Azure Voice Live API with support for models, agents, characters, and voices.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["azure", "voice", "realtime", "api", "speech", "avatar"],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kkgkaundal/azure-voice-live.git"
+  },
+  "peerDependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.12",
+    "@types/node": "^22.5.1",
+    "@types/ws": "^8.5.12",
+    "jest": "^29.7.0",
+    "rollup": "^4.21.0",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  }
+}
