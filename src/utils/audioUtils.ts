@@ -4,7 +4,10 @@
  * @param sampleRate - Audio sample rate in Hz
  * @returns WAV formatted ArrayBuffer
  */
-export function createWavBuffer(pcmData: ArrayBuffer, sampleRate: number): ArrayBuffer {
+export function createWavBuffer(
+  pcmData: ArrayBuffer,
+  sampleRate: number
+): ArrayBuffer {
   if (!pcmData || pcmData.byteLength === 0) {
     throw new Error('Invalid PCM data: empty or null');
   }

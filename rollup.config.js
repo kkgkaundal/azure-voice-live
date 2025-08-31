@@ -37,14 +37,14 @@ export default {
       tsconfig: './tsconfig.json',
       useTsconfigDeclarationDir: true,
       clean: true,
-    } ),
+    }),
   ],
   external: ['microsoft-cognitiveservices-speech-sdk'],
   globals: {
-    'microsoft-cognitiveservices-speech-sdk': 'SpeechSDK'
+    'microsoft-cognitiveservices-speech-sdk': 'SpeechSDK',
   },
-    optimizeDeps: {
-    include: ["microsoft-cognitiveservices-speech-sdk"],
+  optimizeDeps: {
+    include: ['microsoft-cognitiveservices-speech-sdk'],
   },
   onwarn(warning, warn) {
     if (warning.code === 'CIRCULAR_DEPENDENCY') return;

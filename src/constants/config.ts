@@ -1,4 +1,4 @@
-import { SessionConfig } from "../interfaces/types";
+import { SessionConfig } from '../interfaces/types';
 
 export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   instructions: 'You are a helpful AI assistant',

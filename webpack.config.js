@@ -1,7 +1,7 @@
 module.exports = {
   resolve: {
     alias: {
-      events: 'eventemitter3'
-    }
-  }
+      events: 'eventemitter3',
+    },
+  },
 };

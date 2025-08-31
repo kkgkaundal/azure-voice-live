@@ -55,7 +55,7 @@ export class AzureVoiceLiveClient extends EventEmitter {
   private renderer: THREE.WebGLRenderer | null = null;
   private avatar: THREE.Object3D | null = null;
   private analyser: AnalyserNode | null = null;
-  private avatarConfig: AvatarConfig;
+  private avatarConfig: AvatarConfig | null = null;
   private avatarSynthesizer: SpeechSDK.AvatarSynthesizer | null = null;
   private peerConnection: RTCPeerConnection | null = null;
   private videoElement: HTMLVideoElement | null = null;
@@ -67,7 +67,7 @@ export class AzureVoiceLiveClient extends EventEmitter {
     auth: AuthOptions,
     voice: string = 'en-US-JennyNeural',
     sessionConfig: SessionConfig = {},
-    avatarConfig: AvatarConfig
+    avatarConfig: AvatarConfig | null = null
   ) {
     super();
     this.endpoint = `wss://${resourceName}.cognitiveservices.azure.com/voice-live/realtime?api-version=2025-05-01-preview&model=${model}${
@@ -75,61 +75,85 @@ export class AzureVoiceLiveClient extends EventEmitter {
     }`;
     this.auth = auth;
     this.sessionConfig = sessionConfig;
-    this.avatarConfig = avatarConfig;
-    this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    this.avatarConfig = avatarConfig ?? null;
+    this.audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
     this.status = 'disconnected';
-      this.voice = voice;
-      if (avatarConfig?.canvasId) {
-          // Initialize Three.js scene
-          this.scene = new THREE.Scene();
-          this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-          this.camera.position.z = 5;
-          const canvas = document.getElementById(avatarConfig.canvasId) as HTMLCanvasElement;
-          this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: avatarConfig.backgroundColor === 'transparent' });
-          this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.voice = voice;
+    if (this.avatarConfig && this.avatarConfig?.canvasId) {
+      // Initialize Three.js scene
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      this.camera.position.z = 5;
+      const canvas = document.getElementById(
+        this.avatarConfig.canvasId
+      ) as HTMLCanvasElement;
+      this.renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: this.avatarConfig.backgroundColor === 'transparent',
+      });
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
 
-          // Set background
-          if (avatarConfig.backgroundColor && avatarConfig.backgroundColor !== 'transparent') {
-              this.renderer.setClearColor(avatarConfig.backgroundColor, 1);
-          } else {
-              this.renderer.setClearColor(0x000000, 0);
-          }
-
-          // Create video element for Azure avatar stream
-          this.videoElement = document.createElement('video');
-          this.videoElement.style.position = 'absolute';
-          this.videoElement.style.top = '0';
-          this.videoElement.style.left = '0';
-          this.videoElement.autoplay = true;
-          this.videoElement.muted = true;
-          (canvas.parentElement as HTMLElement).appendChild(this.videoElement);
-
-          // Initialize avatar
-          this.initAvatar();
-
-          // Set up audio analyser (fallback)
-          this.analyser = this.audioContext.createAnalyser();
-          this.analyser.fftSize = 256;
+      // Set background
+      if (
+        this.avatarConfig.backgroundColor &&
+        this.avatarConfig.backgroundColor !== 'transparent'
+      ) {
+        this.renderer.setClearColor(this.avatarConfig.backgroundColor, 1);
+      } else {
+        this.renderer.setClearColor(0x000000, 0);
       }
+
+      // Create video element for Azure avatar stream
+      this.videoElement = document.createElement('video');
+      this.videoElement.style.position = 'absolute';
+      this.videoElement.style.top = '0';
+      this.videoElement.style.left = '0';
+      this.videoElement.autoplay = true;
+      this.videoElement.muted = true;
+      (canvas.parentElement as HTMLElement).appendChild(this.videoElement);
+
+      // Initialize avatar
+      this.initAvatar();
+
+      // Set up audio analyser (fallback)
+      this.analyser = this.audioContext.createAnalyser();
+      this.analyser.fftSize = 256;
+    }
   }
 
   /**
    * Initializes the default Azure avatar using Speech SDK
    */
   private async initAvatar(): Promise<void> {
-    if (this.avatarConfig?.customized || !this.avatarConfig?.speechRegion || !this.avatarConfig?.speechKey) {
+    if (
+      this.avatarConfig?.customized ||
+      !this.avatarConfig?.speechRegion ||
+      !this.avatarConfig?.speechKey
+    ) {
       await this.loadGLTFAvatar();
       return;
     }
 
     try {
       // Fetch ICE servers for WebRTC
-      const iceResponse = await fetch(`https://${this.avatarConfig.speechRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`, {
-        method: 'GET',
-        headers: { 'Ocp-Apim-Subscription-Key': this.avatarConfig.speechKey },
-      });
+      const iceResponse = await fetch(
+        `https://${this.avatarConfig.speechRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`,
+        {
+          method: 'GET',
+          headers: { 'Ocp-Apim-Subscription-Key': this.avatarConfig.speechKey },
+        }
+      );
       if (!iceResponse.ok) {
-        throw new Error(`Failed to fetch ICE servers: ${iceResponse.statusText}`);
+        throw new Error(
+          `Failed to fetch ICE servers: ${iceResponse.statusText}`
+        );
       }
       const iceData = await iceResponse.json();
       const iceServerUrl = iceData.Urls[0]; // Adjusted to match Azure's response structure
@@ -138,29 +162,47 @@ export class AzureVoiceLiveClient extends EventEmitter {
 
       // Create WebRTC peer connection
       this.peerConnection = new RTCPeerConnection({
-        iceServers: [{ urls: [iceServerUrl], username: iceUsername, credential: iceCredential }],
+        iceServers: [
+          {
+            urls: [iceServerUrl],
+            username: iceUsername,
+            credential: iceCredential,
+          },
+        ],
       });
 
       // Create Speech and Avatar config
-      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(this.avatarConfig.speechKey, this.avatarConfig.speechRegion);
+      const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(
+        this.avatarConfig.speechKey,
+        this.avatarConfig.speechRegion
+      );
       speechConfig.speechSynthesisVoiceName = this.voice;
 
       const videoFormat = new SpeechSDK.AvatarVideoFormat();
-      const avatarCharacter = this.avatarConfig.talkingAvatarCharacter || 'lisa';
-      const avatarStyle = this.avatarConfig.talkingAvatarStyle || 'graceful-sitting';
-      const avatarConfig = new SpeechSDK.AvatarConfig(avatarCharacter, avatarStyle, videoFormat);
+      const avatarCharacter =
+        this.avatarConfig.talkingAvatarCharacter || 'lisa';
+      const avatarStyle =
+        this.avatarConfig.talkingAvatarStyle || 'graceful-sitting';
+      const avatarConfig = new SpeechSDK.AvatarConfig(
+        avatarCharacter,
+        avatarStyle,
+        videoFormat
+      );
       if (this.avatarConfig.backgroundColor) {
         avatarConfig.backgroundColor = this.avatarConfig.backgroundColor;
       }
 
       // Create AvatarSynthesizer
-      this.avatarSynthesizer = new SpeechSDK.AvatarSynthesizer(speechConfig, avatarConfig);
+      this.avatarSynthesizer = new SpeechSDK.AvatarSynthesizer(
+        speechConfig,
+        avatarConfig
+      );
 
-    //   // Handle viseme events
-    //   this.avatarSynthesizer.visemeReceived = (s, e) => {
-    //     this.updateLipSync(e.visemeId);
-    //     this.emit('onVisemeReceived', e.visemeId);
-    //   };
+      //   // Handle viseme events
+      //   this.avatarSynthesizer.visemeReceived = (s, e) => {
+      //     this.updateLipSync(e.visemeId);
+      //     this.emit('onVisemeReceived', e.visemeId);
+      //   };
 
       this.avatarSynthesizer.avatarEventReceived = (s, e) => {
         console.log(`Avatar event: ${e.description}`);
@@ -183,7 +225,12 @@ export class AzureVoiceLiveClient extends EventEmitter {
 
       this.animate();
     } catch (error) {
-      this.emit('onError', new Error(`Failed to initialize Azure avatar: ${error}. Ensure S0 tier and preview access.`));
+      this.emit(
+        'onError',
+        new Error(
+          `Failed to initialize Azure avatar: ${error}. Ensure S0 tier and preview access.`
+        )
+      );
       await this.loadGLTFAvatar();
     }
   }
@@ -194,9 +241,9 @@ export class AzureVoiceLiveClient extends EventEmitter {
   private async loadGLTFAvatar(): Promise<void> {
     const loader = new GLTFLoader();
     try {
-      let modelUrl = this.avatarConfig.modelUrl;
+      let modelUrl = this.avatarConfig?.modelUrl;
       if (!this.avatarConfig?.customized) {
-        modelUrl = `./assets/${this.avatarConfig.talkingAvatarCharacter || 'lisa'}.gltf`;
+        modelUrl = `./assets/${this.avatarConfig?.talkingAvatarCharacter || 'lisa'}.gltf`;
       }
       if (!modelUrl) {
         throw new Error('No model URL provided');
@@ -204,7 +251,7 @@ export class AzureVoiceLiveClient extends EventEmitter {
 
       const gltf = await loader.loadAsync(modelUrl);
       this.avatar = gltf.scene;
-      if (this.avatarConfig.talkingAvatarStyle) {
+      if (this.avatarConfig?.talkingAvatarStyle) {
         this.applyAvatarStyle(this.avatarConfig.talkingAvatarStyle);
       }
       this.scene?.add(this.avatar);
@@ -231,7 +278,8 @@ export class AzureVoiceLiveClient extends EventEmitter {
     if (this.avatar && this.analyser && !this.avatarSynthesizer) {
       const dataArray = new Uint8Array(this.analyser.frequencyBinCount);
       this.analyser.getByteFrequencyData(dataArray);
-      const amplitude = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
+      const amplitude =
+        dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length;
       this.updateLipSync(Math.floor(amplitude / 50));
     }
     if (this.renderer && this.scene && this.camera) {
@@ -278,7 +326,10 @@ export class AzureVoiceLiveClient extends EventEmitter {
 
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(this.endpoint, [], {
-        headers: this.auth.type === 'token' ? { Authorization: `Bearer ${this.auth.value}` } : {},
+        headers:
+          this.auth.type === 'token'
+            ? { Authorization: `Bearer ${this.auth.value}` }
+            : {},
       });
       this.ws.binaryType = 'arraybuffer';
 
@@ -323,7 +374,10 @@ export class AzureVoiceLiveClient extends EventEmitter {
                 this.emit(data.type, data);
             }
           } catch (error) {
-            this.emit('onError', new Error(`Failed to parse JSON event: ${error}`));
+            this.emit(
+              'onError',
+              new Error(`Failed to parse JSON event: ${error}`)
+            );
           }
         } else if (event.data instanceof ArrayBuffer) {
           this.emit('onAudioReceived', event.data);
@@ -355,7 +409,11 @@ export class AzureVoiceLiveClient extends EventEmitter {
     }
     this.sessionConfig = { ...this.sessionConfig, ...config };
     this.ws.send(
-      JSON.stringify({ type: 'session.update', session: this.sessionConfig, event_id: '' })
+      JSON.stringify({
+        type: 'session.update',
+        session: this.sessionConfig,
+        event_id: '',
+      })
     );
     this.emit('onSessionUpdate', this.sessionConfig);
   }
@@ -374,7 +432,11 @@ export class AzureVoiceLiveClient extends EventEmitter {
 
       const events: AudioCaptureEvents = {
         onAudioData: (base64Audio: string) => {
-          if (this.ws && this.ws.readyState === WebSocket.OPEN && !this.stopEvent) {
+          if (
+            this.ws &&
+            this.ws.readyState === WebSocket.OPEN &&
+            !this.stopEvent
+          ) {
             const param = {
               type: 'input_audio_buffer.append',
               audio: base64Audio,
@@ -446,35 +508,48 @@ export class AzureVoiceLiveClient extends EventEmitter {
         });
 
         // Transcribe audio to text for avatar input
-        if (this.avatarSynthesizer) {
+        if (this.avatarSynthesizer && this.avatarConfig) {
           const audioStream = SpeechSDK.PushAudioInputStream.create();
-          const audioConfig = SpeechSDK.AudioConfig.fromStreamInput(audioStream);
+          const audioConfig =
+            SpeechSDK.AudioConfig.fromStreamInput(audioStream);
           const nodeBuffer = Buffer.from(wavBuffer);
           audioStream.write(nodeBuffer.buffer);
           audioStream.close();
 
           const recognizer = new SpeechSDK.SpeechRecognizer(
-            SpeechSDK.SpeechConfig.fromSubscription(this.avatarConfig.speechKey, this.avatarConfig.speechRegion),
+            SpeechSDK.SpeechConfig.fromSubscription(
+              this.avatarConfig?.speechKey,
+              this.avatarConfig?.speechRegion
+            ),
             audioConfig
           );
 
           await new Promise<void>((resolve) => {
-            recognizer.recognizeOnceAsync((result) => {
-              const text = result.text;
-              if (text) {
-                this.avatarSynthesizer!.speakTextAsync(text);
+            recognizer.recognizeOnceAsync(
+              (result) => {
+                const text = result.text;
+                if (text) {
+                  this.avatarSynthesizer!.speakTextAsync(text);
+                }
+                recognizer.close();
+                resolve();
+              },
+              (error) => {
+                this.emit(
+                  'onError',
+                  new Error(`Transcription failed: ${error}`)
+                );
+                recognizer.close();
+                resolve();
               }
-              recognizer.close();
-              resolve();
-            }, (error) => {
-              this.emit('onError', new Error(`Transcription failed: ${error}`));
-              recognizer.close();
-              resolve();
-            });
+            );
           });
         }
       } catch (error) {
-        this.emit('onError', new Error(`Failed to play buffered audio: ${error}`));
+        this.emit(
+          'onError',
+          new Error(`Failed to play buffered audio: ${error}`)
+        );
       }
     }
     this._isPlaying = false;
@@ -526,7 +601,7 @@ export class AzureVoiceLiveClient extends EventEmitter {
    * Stops audio capture
    */
   stop(): void {
-      this.stopEvent = true;
+    this.stopEvent = true;
   }
 
   /**

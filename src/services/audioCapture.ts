@@ -12,7 +12,8 @@ export async function captureAudio(
 ): Promise<void> {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({
+    const audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)({
       sampleRate: 16000, // Consistent with Azure API
     });
     const source = audioContext.createMediaStreamSource(stream);
@@ -31,7 +32,10 @@ export async function captureAudio(
         const inputData = e.inputBuffer.getChannelData(0);
         const int16Data = new Int16Array(inputData.length);
         for (let i = 0; i < inputData.length; i++) {
-          int16Data[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+          int16Data[i] = Math.max(
+            -32768,
+            Math.min(32767, inputData[i] * 32768)
+          );
         }
         const bytes = new Uint8Array(int16Data.buffer);
         const binary = String.fromCharCode(...bytes);
