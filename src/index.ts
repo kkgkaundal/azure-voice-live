@@ -1,4 +1,5 @@
 import { VoiceLiveClient } from './core/voice-live-client';
+import { AzureVoiceLiveClient } from './services/azureVoiceClient';
 import { VoiceLiveConfig } from './types';
 import { isBrowser, isNode } from './utils/environment';
 
@@ -59,3 +60,4 @@ export { NodeAudioAdapter, NodeConnectionAdapter } from './adapters/node';
 
 // Default export (synchronous for compatibility)
 export default createClientSync;
+export { AzureVoiceLiveClient };
