@@ -26,28 +26,15 @@ export default {
   plugins: [
     resolve({
       browser: true,
-      preferBuiltins: false, // force polyfills
+      preferBuiltins: false,
       mainFields: ['browser', 'module', 'main'],
     }),
     nodePolyfills(),
-    commonjs({
-      include: /node_modules/,
-    }),
+    commonjs(),
     typescript({
       tsconfig: './tsconfig.json',
       useTsconfigDeclarationDir: true,
       clean: true,
     }),
   ],
-  external: ['microsoft-cognitiveservices-speech-sdk'],
-  globals: {
-    'microsoft-cognitiveservices-speech-sdk': 'SpeechSDK',
-  },
-  optimizeDeps: {
-    include: ['microsoft-cognitiveservices-speech-sdk'],
-  },
-  onwarn(warning, warn) {
-    if (warning.code === 'CIRCULAR_DEPENDENCY') return;
-    warn(warning);
-  },
 };
