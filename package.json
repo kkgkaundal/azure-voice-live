@@ -1,6 +1,6 @@
 {
   "name": "azure-voice-live",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A library for Microsoft Azure Voice Live API with support for models, agents, characters, and voices. Uses Azure Speech SDK for audio handling.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
