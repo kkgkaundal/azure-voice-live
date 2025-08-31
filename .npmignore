@@ -1,0 +1,9 @@
+src/
+examples/
+tests/
+*.ts
+*.tgz
+jest.config.js
+rollup.config.js
+tsconfig.json
+.git*

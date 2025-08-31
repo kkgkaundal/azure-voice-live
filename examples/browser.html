@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Azure Voice Live Example</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    #status {
+      min-height: 24px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    #error {
+      color: red;
+      min-height: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button id="connectBtn">Connect</button>
+    <button id="disconnectBtn" disabled>Disconnect</button>
+    <button id="startAudioBtn" disabled>Start Audio</button>
+    <button id="stopAudioBtn" disabled>Stop Audio</button>
+    <!-- <canvas id="avatarCanvas"></canvas> -->
+  </div>
+  <div id="status">Disconnected</div>
+  <div id="error"></div>
+
+  <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js"></script>
+  <script src="../dist/bundle.umd.js"></script>
+  <script>
+    // Ensure EventEmitter is available
+    window.EventEmitter = window.EventEmitter3;
+
+    // Access AzureVoiceLiveClient and captureAudio from the bundle
+    // Assumes bundle.umd.js exposes them on window.AzureVoiceLive
+    const { AzureVoiceLiveClient } = window.AzureVoiceLive;
+
+    const client = new AzureVoiceLiveClient(
+      'sc-ai-agent-resource',
+      'gpt-4o-mini-realtime-preview',
+      { type: 'api-key', value: 'YOUR_API_KEY' }, // Replace with your actual API key (securely)
+      'en-US-JennyNeural',
+      {
+        voice: {
+            name: "en-US-Ava:DragonHDLatestNeural",
+            type: "azure-standard",
+            temperature: 0.8,
+            rate: "1",
+        },
+        // avatar: {
+        //     character: "lisa",
+        //     customized: false,
+        //     style: "casual-sitting",
+        // },
+    });
+
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const startAudioBtn = document.getElementById('startAudioBtn');
+    const stopAudioBtn = document.getElementById('stopAudioBtn');
+    const statusDiv = document.getElementById('status');
+    const errorDiv = document.getElementById('error');
+
+    function setStatus(message) {
+      statusDiv.textContent = message;
+    }
+
+    function setError(message) {
+      errorDiv.textContent = message;
+    }
+
+    function updateButtonStates(connected, streaming) {
+      connectBtn.disabled = connected;
+      disconnectBtn.disabled = !connected;
+      startAudioBtn.disabled = (!connected || streaming);
+      stopAudioBtn.disabled = !streaming;
+    }
+
+    // Event listeners matching AzureVoiceLiveEvents
+    client.on('onConnecting', () => {
+      setStatus('Connecting to Azure Voice Live');
+      updateButtonStates(false, false);
+    });
+
+    client.on('onConnected', () => {
+      setStatus('Connected to Azure Voice Live');
+      updateButtonStates(true, false);
+      const sessionConfig = {
+    voice: {
+      name: "en-US-Ava:DragonHDLatestNeural",
+      type: "azure-standard",
+      temperature: 0.8,
+      rate: "1",
+    },
+      };
+      try {
+        client.sendSessionUpdate(sessionConfig);
+        setStatus('Session configured');
+      } catch (error) {
+        setError(`Session configuration failed: ${error.message}`);
+      }
+    });
+
+    client.on('onDisconnected', () => {
+      setStatus('Disconnected');
+      updateButtonStates(false, false);
+    });
+
+    client.on('onListeningStart', () => {
+      setStatus('Streaming audio');
+      updateButtonStates(true, true);
+    });
+
+    client.on('onListeningStop', () => {
+      setStatus('Audio streaming stopped');
+      updateButtonStates(true, false);
+    });
+
+    client.on('onSpeechStarted', () => {
+      setStatus('Speech detected');
+    });
+
+    client.on('onSessionCreated', (sessionId) => {
+      setStatus(`Session created: ${sessionId}`);
+    });
+
+    client.on('onSessionUpdate', (config) => {
+      setStatus('Session configuration updated');
+      console.log('Session config:', config);
+    });
+
+    client.on('onAudioSent', (e) => {
+    //   console.log('Audio sent to server');
+    });
+
+    client.on('onAudioReceived', () => {
+      setStatus('Received audio response');
+    });
+
+    client.on('onError', (error) => {
+      setError(`Error: ${error.message || error}`);
+      setStatus('Error occurred');
+      updateButtonStates(false, false);
+    });
+
+    // Button event listeners
+    connectBtn.addEventListener('click', async () => {
+      setError('');
+      try {
+        await client.connect();
+      } catch (error) {
+        setError(`Connection failed: ${error.message}`);
+      }
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+      client.disconnect();
+      setStatus('Disconnected');
+      updateButtonStates(false, false);
+    });
+
+    startAudioBtn.addEventListener('click', async () => {
+      setError('');
+      try {
+        client.start();
+        await client.sendAudioInput('browser-node-1');
+      } catch (error) {
+        setError(`Audio streaming failed: ${error.message}`);
+      }
+    });
+
+    stopAudioBtn.addEventListener('click', () => {
+      client.stop();
+      setStatus('Audio streaming stopped');
+      updateButtonStates(true, false);
+    });
+  </script>
+</body>
+</html>
