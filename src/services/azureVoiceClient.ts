@@ -1,9 +1,9 @@
-import WebSocket from 'isomorphic-ws';
 import EventEmitter from 'events';
 import { Buffer } from 'buffer';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+// import WebSocket from 'ws';
 import {
   SessionConfig,
   AuthOptions,
@@ -325,14 +325,8 @@ export class AzureVoiceLiveClient extends EventEmitter {
     this.emit('onConnecting');
 
     return new Promise((resolve, reject) => {
-      this.ws = new WebSocket(this.endpoint, [], {
-        headers:
-          this.auth.type === 'token'
-            ? { Authorization: `Bearer ${this.auth.value}` }
-            : {},
-      });
+      this.ws = new WebSocket(this.endpoint, [],);
       this.ws.binaryType = 'arraybuffer';
-
       this.ws.onopen = () => {
         this.status = 'connected';
         this.emit('onConnected');
