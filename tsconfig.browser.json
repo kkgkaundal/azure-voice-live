@@ -1,0 +1,35 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ES2018",
+    "lib": ["ES2018", "DOM", "DOM.Iterable"],
+    "outDir": "./dist/browser-temp",
+    "declaration": false,
+    "declarationMap": false,
+    "jsx": "react-jsx",
+    "moduleResolution": "node",
+    "skipLibCheck": true
+  },
+  "include": [
+    "src/browser.ts",
+    "src/types/**/*",
+    "src/core/**/*",
+    "src/adapters/browser.ts",
+    "src/react/hooks.browser.ts",
+    "src/react/components.tsx",
+    "src/utils/environment.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "examples/**/*",
+    "src/adapters/node.ts",
+    "src/index.ts",
+    "src/node.ts",
+    "src/react/hooks.ts",
+    "src/react/index.ts"
+  ]
+}

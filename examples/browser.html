@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Azure Voice Live Example</title>
+  <title>Azure Voice Live SDK Example</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,215 +12,321 @@
     .controls {
       margin-bottom: 20px;
     }
+    .config-section {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .config-section h3 {
+      margin-top: 0;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    .form-group label {
+      display: inline-block;
+      width: 120px;
+      font-weight: bold;
+    }
+    .form-group input {
+      width: 300px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
     button {
       padding: 10px 20px;
       margin-right: 10px;
       cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
     }
+    .btn-primary { background-color: #007bff; color: white; }
+    .btn-success { background-color: #28a745; color: white; }
+    .btn-danger { background-color: #dc3545; color: white; }
+    .btn-secondary { background-color: #6c757d; color: white; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
     #status {
       min-height: 24px;
       margin-bottom: 10px;
       color: #333;
+      font-weight: bold;
     }
     #error {
       color: red;
       min-height: 24px;
+      font-weight: bold;
+    }
+    .session-info {
+      background: #e7f3ff;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="controls">
-    <button id="connectBtn">Connect</button>
-    <button id="disconnectBtn" disabled>Disconnect</button>
-    <button id="startAudioBtn" disabled>Start Audio</button>
-    <button id="stopAudioBtn" disabled>Stop Audio</button>
-    <!-- <canvas id="avatarCanvas"></canvas> -->
+  <h1>Azure Voice Live SDK - Browser Example</h1>
+  
+  <div class="config-section">
+    <h3>Configuration</h3>
+    <div class="form-group">
+      <label>Endpoint:</label>
+      <input type="text" id="endpoint" placeholder="https://your-endpoint.azure.com/" />
+    </div>
+    <div class="form-group">
+      <label>API Key:</label>
+      <input type="password" id="apiKey" placeholder="Your API Key" />
+    </div>
+    <div class="form-group">
+      <label>Model:</label>
+      <input type="text" id="model" placeholder="gpt-4o-mini-realtime-preview" />
+    </div>
   </div>
-  <div id="status">Disconnected</div>
+
+  <div class="controls">
+    <button id="connectBtn" class="btn-primary">Connect</button>
+    <button id="disconnectBtn" class="btn-secondary" disabled>Disconnect</button>
+    <button id="startRecordingBtn" class="btn-success" disabled>Start Recording</button>
+    <button id="stopRecordingBtn" class="btn-danger" disabled>Stop Recording</button>
+    <button id="startPlaybackBtn" class="btn-success" disabled>Start Playback</button>
+    <button id="stopPlaybackBtn" class="btn-danger" disabled>Stop Playback</button>
+  </div>
+
+  <div id="status">Ready to connect</div>
   <div id="error"></div>
+  <div id="sessionInfo" class="session-info" style="display: none;"></div>
 
-  <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js"></script>
-  <script src="../dist/bundle.umd.js"></script>
+  <!-- Load the SDK from your dist folder -->
+  <script src="../dist/browser/index.js"></script>
   <script>
-    // Ensure EventEmitter is available
-    window.EventEmitter = window.EventEmitter3;
+    let client = null;
+    let isConnected = false;
+    let isRecording = false;
+    let isPlaybackActive = false;
 
-    // Access AzureVoiceLiveClient and captureAudio from the bundle
-    // Assumes bundle.umd.js exposes them on window.AzureVoiceLive
-    const { AzureVoiceLiveClient } = window.AzureVoiceLive;
+    // DOM elements
+    const elements = {
+      endpoint: document.getElementById('endpoint'),
+      apiKey: document.getElementById('apiKey'),
+      model: document.getElementById('model'),
+      connectBtn: document.getElementById('connectBtn'),
+      disconnectBtn: document.getElementById('disconnectBtn'),
+      startRecordingBtn: document.getElementById('startRecordingBtn'),
+      stopRecordingBtn: document.getElementById('stopRecordingBtn'),
+      startPlaybackBtn: document.getElementById('startPlaybackBtn'),
+      stopPlaybackBtn: document.getElementById('stopPlaybackBtn'),
+      status: document.getElementById('status'),
+      error: document.getElementById('error'),
+      sessionInfo: document.getElementById('sessionInfo')
+    };
 
-    const client = new AzureVoiceLiveClient(
-      'sc-ai-agent-resource',
-      'gpt-4o-mini-realtime-preview',
-      { type: 'api-key', value: '8OUHmxYdk5lsyRl6VpOQ15ROMcbdLYuRtEyh1N8NUbAyu9ZT922HJQQJ99BEACHYHv6XJ3w3AAAAACOGoNYD' }, // Replace with your actual API key (securely)
-      'en-US-Ava:DragonHDLatestNeural',
-      {
-        instructions: `## Objective :
+    // Initialize with sample values
+    elements.endpoint.value = 'https://sc-ai-agent-resource.openai.azure.com/';
+    elements.apiKey.value = '8OUHmxYdk5lsyRl6VpOQ15ROMcbdLYuRtEyh1N8NUbAyu9ZT922HJQQJ99BEACHYHv6XJ3w3AAAAACOGoNYD';
+    elements.model.value = 'gpt-4o-mini-realtime-preview';
+
+    function setStatus(message) {
+      elements.status.textContent = message;
+      console.log('Status:', message);
+    }
+
+    function setError(message) {
+      elements.error.textContent = message;
+      if (message) {
+        console.error('Error:', message);
+      }
+    }
+
+    function updateButtonStates() {
+      elements.connectBtn.disabled = isConnected;
+      elements.disconnectBtn.disabled = !isConnected;
+      elements.startRecordingBtn.disabled = !isConnected || isRecording;
+      elements.stopRecordingBtn.disabled = !isRecording;
+      elements.startPlaybackBtn.disabled = !isConnected || isPlaybackActive;
+      elements.stopPlaybackBtn.disabled = !isPlaybackActive;
+    }
+
+    function showSessionInfo(sessionId) {
+      elements.sessionInfo.style.display = 'block';
+      elements.sessionInfo.innerHTML = `<strong>Session ID:</strong> ${sessionId}`;
+    }
+
+    // Create client and setup event listeners
+    function setupClient() {
+      const config = {
+        endpoint: elements.endpoint.value,
+        apiKey: elements.apiKey.value,
+        model: elements.model.value,
+        apiVersion: '2025-05-01-preview'
+      };
+
+      try {
+        console.log('Creating client with config:', config);
+        client = AzureVoiceLive.createClient(config);
+        
+        // Setup event listeners
+        client.on('connected', () => {
+          isConnected = true;
+          setStatus('Connected to Azure Voice Live');
+          updateButtonStates();
+        });
+
+        client.on('disconnected', () => {
+          isConnected = false;
+          isRecording = false;
+          isPlaybackActive = false;
+          setStatus('Disconnected from Azure Voice Live');
+          updateButtonStates();
+          elements.sessionInfo.style.display = 'none';
+        });
+
+        client.on('sessionCreated', (event) => {
+          setStatus('Session created successfully');
+          showSessionInfo(event.session.id);
+        });
+
+        client.on('recordingStarted', () => {
+          isRecording = true;
+          setStatus('Recording started - speak into your microphone');
+          updateButtonStates();
+        });
+
+        client.on('recordingStopped', () => {
+          isRecording = false;
+          setStatus('Recording stopped');
+          updateButtonStates();
+        });
+
+        client.on('playbackStarted', () => {
+          isPlaybackActive = true;
+          setStatus('Playback started');
+          updateButtonStates();
+        });
+
+        client.on('playbackStopped', () => {
+          isPlaybackActive = false;
+          setStatus('Playback stopped');
+          updateButtonStates();
+        });
+
+        client.on('speechStarted', () => {
+          setStatus('Speech detected - processing...');
+        });
+
+        client.on('speechStopped', () => {
+          setStatus('Speech ended');
+        });
+
+        client.on('audioReceived', (event) => {
+          console.log('Audio received event:', event);
+          setStatus('Received audio response from Azure');
+        });
+
+        client.on('error', (error) => {
+          setError(`Error: ${error.message || error}`);
+          isConnected = false;
+          isRecording = false;
+          isPlaybackActive = false;
+          updateButtonStates();
+        });
+
+        return true;
+      } catch (error) {
+        setError(`Failed to create client: ${error.message}`);
+        return false;
+      }
+    }
+
+    // Event handlers
+    elements.connectBtn.addEventListener('click', async () => {
+      setError('');
+      
+      if (!setupClient()) {
+        return;
+      }
+
+      try {
+        setStatus('Connecting to Azure Voice Live...');
+        
+        // Connect to Azure Voice Live
+        await client.connect({
+          instructions: `## Objective:
 Act as "Ava," an English teacher giving simple and engaging foundational English lessons. Keep responses brief, under three sentences, for maximum impact.
 
 ## Tone and Language
-- **Energetic and Exciting**: Maintain an enthusiastic and lively tone throughout the session. Use expressive variations in pitch and volume to keep the lessons engaging and fun.
-- **Very Simple Language**: Speak clearly and slowly using basic English vocabulary and short sentences. Utilize simple grammatical structures.
-- **Encouraging and Positive**: Continuously praise the student's efforts and responses to make the learning process enjoyable and boost confidence.
+- **Energetic and Exciting**: Maintain an enthusiastic and lively tone throughout the session.
+- **Very Simple Language**: Speak clearly and slowly using basic English vocabulary and short sentences.
+- **Encouraging and Positive**: Continuously praise the student's efforts and responses.
 
 ## Instructional Strategies
 ### Engaging Introduction
 - Start each session with a vibrant and personalized greeting, e.g., "Hi there! My name is Ava, your English teacher today. What's your name, my dear?"
-- Respond to the student's introduction with genuine enthusiasm, maintaining an English dialogue, e.g., "Oh, hi, [Student's Name]. It's really great to meet you. Let's get to know you better."
 
-### Simple Observations and Questions
-- Initiate conversations by asking general, open-ended questions that encourage the student to talk about their interests and surroundings. Address students by their names.
-
-### Interactive Learning and Pronunciation Practice
-- Include basic language games that involve describing their hobbies, sports, animals, or activities, maintaining a playful tone to keep these activities exciting.
-- Actively listen to the student's pronunciation, and gently correct mispronunciations by modeling the correct pronunciation.
-- Encourage repetition and practice by using phrases like "Can you say that again? Wonderful, that sounds much better!"
-- Employ conversational fillers to make interactions more natural, e.g., "Hmm," "Let's see," "You know," "Right?"
+### Interactive Learning
+- Include basic language games and pronunciation practice.
+- Actively listen to pronunciation and gently correct mistakes.
+- Use conversational fillers to make interactions natural.
 
 ### Feedback and Encouragement
-- Provide immediate and positive feedback. Celebrate correct pronunciation and gently correct mistakes with encouraging words, e.g., "That's almost right! Let's try it together this way... Okay?"
-- Always conclude each correct response with positive reinforcement, e.g., "Yes! You got it. Great job!"
-
-### Progress Assessment
-- Use verbal quizzes and recap questions at the end of the session to review and reinforce what was learned, keeping it fun like a mini-game.
-- Adjust future lessons based on the student's progress in pronunciation and engagement during these recap moments.
-
-### End of Session
-- Summarize the day's learning in an upbeat manner, e.g., "Today was super fun, [Student's Name]! You did an amazing job learning about [topics covered], and your pronunciation is getting so good!"
-- Show excitement for the next meeting, e.g., "I can't wait to see you again and learn more together!"`,
-        voice: {
+- Provide immediate positive feedback and celebrate correct responses.
+- Always conclude with positive reinforcement.`,
+          voice: {
             name: "en-US-Ava:DragonHDLatestNeural",
             type: "azure-standard",
             temperature: 0.8,
-            rate: "1",
-        },
-        // avatar: {
-        //     character: "lisa",
-        //     customized: false,
-        //     style: "casual-sitting",
-        // },
-    });
-
-    const connectBtn = document.getElementById('connectBtn');
-    const disconnectBtn = document.getElementById('disconnectBtn');
-    const startAudioBtn = document.getElementById('startAudioBtn');
-    const stopAudioBtn = document.getElementById('stopAudioBtn');
-    const statusDiv = document.getElementById('status');
-    const errorDiv = document.getElementById('error');
-
-    function setStatus(message) {
-      statusDiv.textContent = message;
-    }
-
-    function setError(message) {
-      errorDiv.textContent = message;
-    }
-
-    function updateButtonStates(connected, streaming) {
-      connectBtn.disabled = connected;
-      disconnectBtn.disabled = !connected;
-      startAudioBtn.disabled = (!connected || streaming);
-      stopAudioBtn.disabled = !streaming;
-    }
-
-    // Event listeners matching AzureVoiceLiveEvents
-    client.on('onConnecting', () => {
-      setStatus('Connecting to Azure Voice Live');
-      updateButtonStates(false, false);
-    });
-
-    client.on('onConnected', () => {
-      setStatus('Connected to Azure Voice Live');
-      updateButtonStates(true, false);
-      const sessionConfig = {
-    voice: {
-      name: "en-US-Ava:DragonHDLatestNeural",
-      type: "azure-standard",
-      temperature: 0.8,
-      rate: "1",
-    },
-      };
-      try {
-        client.sendSessionUpdate(sessionConfig);
-        setStatus('Session configured');
-      } catch (error) {
-        setError(`Session configuration failed: ${error.message}`);
-      }
-    });
-
-    client.on('onDisconnected', () => {
-      setStatus('Disconnected');
-      updateButtonStates(false, false);
-    });
-
-    client.on('onListeningStart', () => {
-      setStatus('Streaming audio');
-      updateButtonStates(true, true);
-    });
-
-    client.on('onListeningStop', () => {
-      setStatus('Audio streaming stopped');
-      updateButtonStates(true, false);
-    });
-
-    client.on('onSpeechStarted', () => {
-      setStatus('Speech detected');
-    });
-
-    client.on('onSessionCreated', (sessionId) => {
-      setStatus(`Session created: ${sessionId}`);
-    });
-
-    client.on('onSessionUpdate', (config) => {
-      setStatus('Session configuration updated');
-      console.log('Session config:', config);
-    });
-
-    client.on('onAudioSent', (e) => {
-    //   console.log('Audio sent to server');
-    });
-
-    client.on('onAudioReceived', () => {
-      setStatus('Received audio response');
-    });
-
-    client.on('onError', (error) => {
-      setError(`Error: ${error.message || error}`);
-      setStatus('Error occurred');
-      updateButtonStates(false, false);
-    });
-
-    // Button event listeners
-    connectBtn.addEventListener('click', async () => {
-      setError('');
-      try {
-        await client.connect();
+          },
+          audioSettings: {
+            sampleRate: 24000,
+            channels: 1,
+            noiseReduction: true,
+            echoCancellation: true
+          }
+        });
+        
       } catch (error) {
         setError(`Connection failed: ${error.message}`);
       }
     });
 
-    disconnectBtn.addEventListener('click', () => {
-      client.disconnect();
-      setStatus('Disconnected');
-      updateButtonStates(false, false);
-    });
-
-    startAudioBtn.addEventListener('click', async () => {
-      setError('');
-      try {
-        client.start();
-        await client.sendAudioInput('browser-node-1');
-      } catch (error) {
-        setError(`Audio streaming failed: ${error.message}`);
+    elements.disconnectBtn.addEventListener('click', () => {
+      if (client) {
+        client.disconnect();
       }
     });
 
-    stopAudioBtn.addEventListener('click', () => {
-      client.stop();
-      setStatus('Audio streaming stopped');
-      updateButtonStates(true, false);
+    elements.startRecordingBtn.addEventListener('click', async () => {
+      setError('');
+      try {
+        await client.startRecording();
+      } catch (error) {
+        setError(`Failed to start recording: ${error.message}`);
+      }
     });
+
+    elements.stopRecordingBtn.addEventListener('click', () => {
+      if (client) {
+        client.stopRecording();
+      }
+    });
+
+    elements.startPlaybackBtn.addEventListener('click', () => {
+      if (client) {
+        client.startPlayback();
+      }
+    });
+
+    elements.stopPlaybackBtn.addEventListener('click', () => {
+      if (client) {
+        client.stopPlayback();
+      }
+    });
+
+    // Initial button state
+    updateButtonStates();
+    setStatus('Enter your Azure credentials and click Connect to start');
   </script>
 </body>
 </html>

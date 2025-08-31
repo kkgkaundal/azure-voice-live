@@ -1,8 +1,17 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  moduleNameMapper: {
-    '^microsoft-cognitiveservices-speech-sdk$':
-      '<rootDir>/node_modules/microsoft-cognitiveservices-speech-sdk/distrib/lib/microsoft.cognitiveservices.speech.sdk.js',
+  roots: ['<rootDir>/src'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
   },
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/**/__tests__/**',
+    '!src/**/index.ts',
+  ],
+  moduleFileExtensions: ['ts', 'js', 'json'],
+  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
 };

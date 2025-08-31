@@ -1,0 +1,11 @@
+{
+  "name": "azure-voice-live-sdk-examples",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "nodejs": "cd nodejs-cli && npm start",
+    "react": "cd react-app && npm start",
+    "nextjs": "cd nextjs-app && npm run dev",
+    "vanilla": "cd vanilla-js && npx serve ."
+  }
+}

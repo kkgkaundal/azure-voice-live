@@ -1,0 +1,255 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Azure Voice Live Component Styles */
+@layer base {
+  .voice-live-component {
+    @apply font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Voice Live Button Base */
+  .voice-btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 font-medium rounded-voice transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Button Variants */
+  .voice-btn-primary {
+    @apply bg-voice-primary-600 text-white hover:bg-voice-primary-700 focus:ring-voice-primary-500 shadow-voice;
+  }
+
+  .voice-btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+  }
+
+  .voice-btn-success {
+    @apply bg-voice-success-600 text-white hover:bg-voice-success-700 focus:ring-voice-success-500;
+  }
+
+  .voice-btn-danger {
+    @apply bg-voice-danger-600 text-white hover:bg-voice-danger-700 focus:ring-voice-danger-500;
+  }
+
+  .voice-btn-outline {
+    @apply border-2 border-voice-primary-300 text-voice-primary-700 hover:bg-voice-primary-50 focus:ring-voice-primary-500;
+  }
+
+  .voice-btn-ghost {
+    @apply text-voice-primary-600 hover:bg-voice-primary-50 focus:ring-voice-primary-500;
+  }
+
+  /* Button Sizes */
+  .voice-btn-xs {
+    @apply px-2 py-1 text-xs;
+  }
+
+  .voice-btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .voice-btn-md {
+    @apply px-4 py-2 text-base;
+  }
+
+  .voice-btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  .voice-btn-xl {
+    @apply px-8 py-4 text-xl;
+  }
+
+  /* Voice Live Cards */
+  .voice-card {
+    @apply bg-white rounded-voice border border-gray-200 shadow-voice;
+  }
+
+  .voice-card-header {
+    @apply p-6 border-b border-gray-200;
+  }
+
+  .voice-card-body {
+    @apply p-6;
+  }
+
+  .voice-card-footer {
+    @apply p-6 border-t border-gray-200 bg-gray-50;
+  }
+
+  /* Status Indicators */
+  .voice-indicator {
+    @apply w-3 h-3 rounded-full;
+  }
+
+  .voice-indicator-connected {
+    @apply bg-voice-success-400 animate-pulse;
+  }
+
+  .voice-indicator-recording {
+    @apply bg-voice-danger-400 animate-recording;
+  }
+
+  .voice-indicator-playback {
+    @apply bg-voice-primary-400 animate-pulse;
+  }
+
+  .voice-indicator-inactive {
+    @apply bg-gray-300;
+  }
+
+  /* Voice Wave Animation */
+  .voice-wave {
+    @apply w-1 bg-voice-primary-500 rounded-full animate-voice-wave;
+  }
+
+  /* Theme Variants */
+  .voice-theme-light {
+    @apply bg-white text-gray-900 border-gray-200;
+  }
+
+  .voice-theme-dark {
+    @apply bg-gray-800 text-white border-gray-700;
+  }
+
+  .voice-theme-blue {
+    @apply bg-blue-50 text-blue-900 border-blue-200;
+  }
+
+  .voice-theme-green {
+    @apply bg-green-50 text-green-900 border-green-200;
+  }
+
+  .voice-theme-purple {
+    @apply bg-purple-50 text-purple-900 border-purple-200;
+  }
+
+  /* Recording States */
+  .voice-recording-active {
+    @apply relative;
+  }
+
+  .voice-recording-active::before {
+    @apply absolute -inset-1 bg-voice-danger-200 rounded-voice animate-pulse content-[''];
+  }
+
+  /* Loading States */
+  .voice-loading {
+    @apply animate-pulse;
+  }
+
+  .voice-loading-skeleton {
+    @apply bg-gray-300 rounded animate-pulse;
+  }
+
+  /* Error States */
+  .voice-error {
+    @apply bg-voice-danger-50 border-voice-danger-200 text-voice-danger-800;
+  }
+
+  /* Success States */
+  .voice-success {
+    @apply bg-voice-success-50 border-voice-success-200 text-voice-success-800;
+  }
+
+  /* Warning States */
+  .voice-warning {
+    @apply bg-voice-warning-50 border-voice-warning-200 text-voice-warning-800;
+  }
+}
+
+@layer utilities {
+  /* Custom Voice Live Utilities */
+  .voice-shadow-glow {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+
+  .voice-gradient-primary {
+    background: linear-gradient(135deg, theme('colors.voice-primary.500'), theme('colors.voice-primary.600'));
+  }
+
+  .voice-gradient-success {
+    background: linear-gradient(135deg, theme('colors.voice-success.500'), theme('colors.voice-success.600'));
+  }
+
+  .voice-gradient-danger {
+    background: linear-gradient(135deg, theme('colors.voice-danger.500'), theme('colors.voice-danger.600'));
+  }
+
+  /* Voice Live Text Utilities */
+  .text-voice-gradient {
+    background: linear-gradient(135deg, theme('colors.voice-primary.600'), theme('colors.voice-primary.500'));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Custom Focus Styles */
+  .voice-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-voice-primary-500 focus:ring-offset-2;
+  }
+}
+
+/* Component-specific styles */
+.voice-chat-container {
+  @apply voice-card voice-theme-light;
+}
+
+.voice-recorder-button {
+  @apply voice-btn voice-btn-primary relative overflow-hidden;
+}
+
+.voice-recorder-button.recording {
+  @apply voice-btn-danger voice-recording-active;
+}
+
+.voice-status-badge {
+  @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.voice-quick-button {
+  @apply voice-btn voice-btn-primary select-none touch-manipulation;
+}
+
+.voice-quick-button:active {
+  @apply scale-95 shadow-inner;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .voice-btn {
+    @apply px-3 py-2 text-sm;
+  }
+  
+  .voice-card {
+    @apply rounded-lg;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .voice-theme-auto {
+    @apply voice-theme-dark;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .voice-btn {
+    @apply border-2;
+  }
+  
+  .voice-indicator {
+    @apply border-2 border-white;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .voice-btn,
+  .voice-indicator,
+  .voice-wave {
+    @apply animate-none;
+  }
+}
