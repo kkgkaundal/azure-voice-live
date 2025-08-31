@@ -150,7 +150,7 @@ function App() {
 ### 1. Installation and Setup
 
 ```bash
-npm install azure-voice-live-sdk
+npm install azure-voice-live
 ```
 
 ### 2. Environment Variables
@@ -213,7 +213,7 @@ Create `components/VoiceLiveComponent.tsx`:
 
 ```tsx
 import React, { useState, useEffect } from 'react';
-import type { VoiceLiveClient } from 'azure-voice-live-sdk';
+import type { VoiceLiveClient } from 'azure-voice-live';
 
 export default function VoiceLiveComponent() {
   const [client, setClient] = useState<VoiceLiveClient | null>(null);
@@ -360,7 +360,7 @@ class VoiceLiveClient {
   <button id="connect">Connect</button>
   <button id="record" disabled>Start Recording</button>
   
-  <script src="https://unpkg.com/azure-voice-live-sdk/dist/browser/index.js"></script>
+  <script src="https://unpkg.com/azure-voice-live/dist/browser/index.js"></script>
   <script>
     const client = AzureVoiceLive.createClient({
       endpoint: 'https://your-endpoint.openai.azure.com/',
@@ -424,10 +424,10 @@ function AdvancedVoiceChat() {
 
 | Platform | Status | Import Path |
 |----------|--------|-------------|
-| Browser | ✅ | `azure-voice-live-sdk/browser` |
-| Node.js | ✅ | `azure-voice-live-sdk/node` |
-| React | ✅ | `azure-voice-live-sdk/browser` |
-| Next.js | ✅ | `azure-voice-live-sdk/browser` |
+| Browser | ✅ | `azure-voice-live/browser` |
+| Node.js | ✅ | `azure-voice-live/node` |
+| React | ✅ | `azure-voice-live/browser` |
+| Next.js | ✅ | `azure-voice-live/browser` |
 | React Native | 🚧 | Coming soon |
 
 ## Troubleshooting
@@ -475,10 +475,10 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- 📖 [Documentation](https://github.com/k-kaundal/azure-voice-live-sdk)
-- 🐛 [Issues](https://github.com/k-kaundal/azure-voice-live-sdk/issues)
-- 💬 [Discussions](https://github.com/k-kaundal/azure-voice-live-sdk/discussions)
+- 📖 [Documentation](https://github.com/kkgkaundal/azure-voice-live)
+- 🐛 [Issues](https://github.com/kkgkaundal/azure-voice-live/issues)
+- 💬 [Discussions](https://github.com/kkgkaundal/azure-voice-live/discussions)
 
 ---
 
-Made with ❤️ by [k-kaundal](https://github.com/k-kaundal)
+Made with ❤️ by [kkgkaundal](https://github.com/kkgkaundal)
