@@ -5,11 +5,6 @@ export * from './types';
 // React hooks
 export * from './react/hooks.browser';
 
-// React components with proper exports
-export { 
-  VoiceChat,
-} from './react/components/VoiceChat';
-
 export { 
   VoiceRecorder,
 } from './react/components/VoiceRecorder';

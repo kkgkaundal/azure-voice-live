@@ -1,3 +1,4 @@
+
 import { VoiceLiveClient } from './core/voice-live-client';
 import { AzureVoiceLiveClient } from './services/azureVoiceClient';
 import { VoiceLiveConfig } from './types';
@@ -12,7 +13,9 @@ export async function createClient(config: VoiceLiveConfig): Promise<VoiceLiveCl
       new BrowserConnectionAdapter()
     );
   } else if (isNode) {
-    const { NodeAudioAdapter, NodeConnectionAdapter } = await import('./adapters/node');
+    // Only import Node adapters in Node.js, never in browser bundles
+    // Use eval to avoid static analysis by bundlers
+    const { NodeAudioAdapter, NodeConnectionAdapter } = eval('require("./adapters/node")');
     return new VoiceLiveClient(
       config,
       new NodeAudioAdapter(),
@@ -34,7 +37,9 @@ export function createClientSync(config: VoiceLiveConfig): VoiceLiveClient {
         new BrowserConnectionAdapter()
       );
     } else if (isNode) {
-      const { NodeAudioAdapter, NodeConnectionAdapter } = require('./adapters/node');
+      // Only require Node adapters in Node.js, never in browser bundles
+      // Use eval to avoid static analysis by bundlers
+      const { NodeAudioAdapter, NodeConnectionAdapter } = eval('require("./adapters/node")');
       return new VoiceLiveClient(
         config,
         new NodeAudioAdapter(),
@@ -54,9 +59,9 @@ export * from './core/voice-live-client';
 export * from './utils/environment';
 export * from './react/index'
 
-// These exports will be available but may error at runtime if environment doesn't support them
+// Only export browser adapters by default; node adapters are not for browser use
 export { BrowserAudioAdapter, BrowserConnectionAdapter } from './adapters/browser';
-export { NodeAudioAdapter, NodeConnectionAdapter } from './adapters/node';
+// Do not export NodeAudioAdapter, NodeConnectionAdapter in browser bundles
 
 // Default export (synchronous for compatibility)
 export default createClientSync;

@@ -34,6 +34,7 @@ function createBrowserClient(config: VoiceLiveConfig): VoiceLiveClient {
   );
 }
 
+
 export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveReturn {
   const clientRef = useRef<VoiceLiveClient | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -42,6 +43,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveReturn {
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [error, setError] = useState<Error | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const isConnectingRef = useRef(false);
 
   const initializeClient = useCallback(async () => {
     if (clientRef.current) return clientRef.current;
@@ -59,18 +61,21 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveReturn {
   }, [options.config]);
 
   const connect = useCallback(async () => {
+    if (isConnectingRef.current || isConnected) return;
+    isConnectingRef.current = true;
     try {
       setError(null);
       const client = await initializeClient();
       if (!client) {
         throw new Error('Failed to initialize client');
       }
-
       await client.connect(options.sessionConfig);
     } catch (err) {
       setError(err as Error);
+    } finally {
+      isConnectingRef.current = false;
     }
-  }, [initializeClient, options.sessionConfig]);
+  }, [initializeClient, options.sessionConfig, isConnected]);
 
   const disconnect = useCallback(() => {
     if (clientRef.current) {
@@ -139,10 +144,6 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveReturn {
         client.on('sessionCreated', handleSessionCreated);
         client.on('error', handleError);
 
-        if (options.autoConnect && mounted) {
-          await connect();
-        }
-
         cleanup = () => {
           if (client) {
             client.off('connected', handleConnected);
@@ -175,7 +176,7 @@ export function useVoiceLive(options: UseVoiceLiveOptions): UseVoiceLiveReturn {
         clientRef.current.disconnect();
       }
     };
-  }, [options.config, options.autoConnect, connect, initializeClient]);
+  }, [options.config, connect, initializeClient]);
 
   return {
     client: clientRef.current,
